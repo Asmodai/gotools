@@ -26,7 +26,7 @@ build: logread
 
 logread: deps
 	$(eval GIT_VERSION = $(shell scripts/tag2semver.sh $(VERSION) 2>/dev/null))
-	@echo Building $(LOGREAD) $(GIT_VERSION)
+	@echo "Building $(LOGREAD) with '$(GIT_VERSION)'"
 	@go build                                               \
 		-tags=go_json                                   \
 		-o $(ROOT_DIR)/bin/$(LOGREAD)                   \
@@ -37,10 +37,6 @@ test: deps
 	@echo Running tests
 	@go test --tags=testing $$(go list ./...) -coverprofile=tests.out
 	@go tool cover -html=tests.out -o coverage.html
-
-run: deps
-	@echo Running $(APP)
-	@go run $(CMD_DIR)/$(APP)
 
 .PHONY: clean
 clean:
