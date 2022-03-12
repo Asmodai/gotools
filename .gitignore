@@ -1,0 +1,16 @@
+# Junk to ignore
+tests.out
+coverage.html
+\#*
+*~
+*.bak
+*.*prof
+*.log
+
+# Subdirectories to ignore.
+bin/
+vendor/
+logs/
+sql/*.csv
+sql/*.json
+sql/weather.sql
