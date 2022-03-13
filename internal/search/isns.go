@@ -24,7 +24,6 @@ package search
 
 import (
 	"fmt"
-	"sync"
 )
 
 const (
@@ -39,11 +38,6 @@ const (
 	ISN_JNZ
 	ISN_CLEAR
 	ISN_MAX
-)
-
-var (
-	LabelOnce sync.Once
-	LabelInst *LabelTable
 )
 
 type Isn int
@@ -67,86 +61,6 @@ func (i Isn) String() string {
 
 func (i Isn) Bytecode() string {
 	return fmt.Sprintf("%d", int(i))
-}
-
-type IOperand interface {
-	String() string
-	Bytecode() string
-}
-
-type Operand struct {
-}
-
-type LabelTable struct {
-	gensym int
-	labels map[string]*Label
-}
-
-func (lt *LabelTable) Lookup(sym string) *Label {
-	lbl, ok := lt.labels[sym]
-	if !ok {
-		return nil
-	}
-
-	return lbl
-}
-
-func (lt *LabelTable) makeSym() string {
-	lt.gensym++
-
-	return fmt.Sprintf("L%d", lt.gensym)
-}
-
-func (lt *LabelTable) MakeLabel() *Label {
-	sym := lt.makeSym()
-	label := &Label{Target: sym}
-
-	lt.labels[sym] = label
-
-	return label
-}
-
-func GetLabelTable() *LabelTable {
-	LabelOnce.Do(func() {
-		LabelInst = &LabelTable{
-			gensym: 0,
-			labels: map[string]*Label{},
-		}
-	})
-
-	return LabelInst
-}
-
-type Label struct {
-	Operand
-	Target string
-	Offset uint16
-}
-
-type SearchField struct {
-	Operand
-	Field  string
-	Search string
-}
-
-func (o Label) String() string {
-	if o.Offset > 0 {
-		return fmt.Sprintf("%d", o.Offset)
-	}
-
-	return fmt.Sprintf("%-5s", o.Target)
-}
-
-func (o Label) Bytecode() string {
-	return fmt.Sprintf("%d", o.Offset)
-}
-
-func (o SearchField) String() string {
-	return fmt.Sprintf("%s %s", o.Field, o.Search)
-}
-
-func (o SearchField) Bytecode() string {
-	return fmt.Sprintf("%s:%s", o.Field, o.Search)
 }
 
 type Inst struct {
