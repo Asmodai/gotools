@@ -1,5 +1,5 @@
 /*
- * entity.go --- Log entities.
+ * vm.go --- The virtual machine of doombringing doominess.
  *
  * Copyright (c) 2022 Paul Ward <asmodai@gmail.com>
  *
@@ -20,18 +20,64 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-package entity
+package search
 
 import (
-	"io"
+	"fmt"
 )
 
-type Entity interface {
-	Short(int) string
-	Display()
-	DisplayTo(io.Writer)
-	Compose(string, interface{}) bool
-	SetRest(Line)
+const (
+	STACK_CAPACITY   = 512
+	PROGRAM_CAPACITY = 512
+)
+
+type StackData [STACK_CAPACITY]interface{}
+type ProgramData [PROGRAM_CAPACITY]Inst
+
+type Stack struct {
+	size int
+	data StackData
 }
 
-/* entity.go ends here. */
+type Program struct {
+	size int
+	data ProgramData
+}
+
+type VM struct {
+	stack   Stack
+	program Program
+
+	sp int
+	pc int
+
+	halted bool
+}
+
+func NewVM() *VM {
+	return &VM{
+		stack: Stack{
+			size: 0,
+			data: StackData{},
+		},
+		program: Program{
+			size: 0,
+			data: ProgramData{},
+		},
+		sp:     0,
+		pc:     0,
+		halted: true,
+	}
+}
+
+func (vm *VM) String() string {
+	return fmt.Sprintf("VM halted:%t  sp:%d  pc:%d  ss:%d  ps:%d\n",
+		vm.halted,
+		vm.sp,
+		vm.pc,
+		vm.stack.size,
+		vm.program.size,
+	)
+}
+
+/* vm.go ends here. */

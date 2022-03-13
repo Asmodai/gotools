@@ -24,31 +24,41 @@ package entity
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"strings"
 )
 
 type StacktraceLine map[string]string
 
-func (stl StacktraceLine) Display() {
-	fmt.Printf(
-		"%s -> %s [%s]\n",
+func (stl StacktraceLine) DisplayTo(w io.Writer) {
+	fmt.Fprintf(
+		w,
+		"\x1b[0;33m%s\x1b[0m \x1b[1;36m->\x1b[0m \x1b[4;34m%s\x1b[0m \x1b[1;36m[\x1b[0m%s\x1b[1;36m]\x1b[0m\n",
 		stl["function"],
 		stl["file"],
 		stl["line"],
 	)
 }
 
+func (stl StacktraceLine) Display() {
+	stl.DisplayTo(os.Stdout)
+}
+
 type Stacktrace []StacktraceLine
 
-func (st Stacktrace) Display() {
+func (st Stacktrace) DisplayTo(w io.Writer) {
 	if len(st) == 0 {
 		return
 	}
 
 	for idx, _ := range st {
-		fmt.Printf("      ")
-		st[idx].Display()
+		st[idx].DisplayTo(w)
 	}
+}
+
+func (st Stacktrace) Display() {
+	st.DisplayTo(os.Stdout)
 }
 
 func NewStacktraceFromString(trace string) Stacktrace {

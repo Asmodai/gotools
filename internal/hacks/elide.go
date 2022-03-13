@@ -30,6 +30,11 @@ type Elidable string
 
 func (s Elidable) Elide(max int) string {
 	runes := []rune(s)
+
+	if len(s) < max {
+		return string(s)
+	}
+
 	return string(runes[0:max-3]) + ElideSuffix
 }
 

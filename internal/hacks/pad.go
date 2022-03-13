@@ -1,5 +1,5 @@
 /*
- * entity.go --- Log entities.
+ * pad.go --- Incredibly bad string padding.
  *
  * Copyright (c) 2022 Paul Ward <asmodai@gmail.com>
  *
@@ -20,18 +20,26 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-package entity
+package hacks
 
-import (
-	"io"
+const (
+	PadPadding string = " "
 )
 
-type Entity interface {
-	Short(int) string
-	Display()
-	DisplayTo(io.Writer)
-	Compose(string, interface{}) bool
-	SetRest(Line)
+type Padable string
+
+func (p Padable) Pad(padding int) string {
+	if len(p) > padding {
+		return string([]rune(p)[0:padding])
+	}
+
+	var buf string
+	var spaces int = padding - len(p)
+	for i := 0; i < spaces; i++ {
+		buf += PadPadding
+	}
+
+	return string(p) + buf
 }
 
-/* entity.go ends here. */
+/* pad.go ends here. */

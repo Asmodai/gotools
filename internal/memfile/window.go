@@ -23,6 +23,8 @@
 package memfile
 
 import (
+	"log"
+	"math"
 	"strings"
 )
 
@@ -32,13 +34,28 @@ func abs(n int64) int64 {
 	return (n ^ y) - y
 }
 
+type block struct {
+	Start int64
+	End   int64
+	Size  int64
+}
+
+type tracker map[int]block
+
+func makeBlock(start, end int64) block {
+	return block{
+		Start: start,
+		End:   end,
+		Size:  end - start,
+	}
+}
+
 type Window struct {
-	file   *MemFile
-	lines  int
-	origin int64
-	size   int64
-	start  int64
-	end    int64
+	file  *MemFile
+	lines int
+
+	blocks tracker
+	index  int
 }
 
 func (w *Window) Lines() int {
@@ -46,40 +63,68 @@ func (w *Window) Lines() int {
 }
 
 func (w *Window) Setup() {
-	w.start = 0
-	w.end = w.file.MaxOffset()
-	w.origin = w.end
+	w.blocks = tracker{}
+	w.index = 0
 
-	w.makeExtents()
+	start, end := w.makeExtents(w.file.MaxOffset() - 1)
+
+	log.Printf("!     Block %d: start:%d  end:%d", w.index, start, end)
+
+	w.blocks[w.index] = makeBlock(start, end)
 }
 
-func (w *Window) MovePrev() {
-	if w.start == 0 {
-		return
+func (w *Window) MovePrev() bool {
+	if w.blocks[w.index].Start <= 0 {
+		return false
 	}
 
-	w.origin = w.start
-	w.makeExtents()
+	if _, ok := w.blocks[w.index+1]; !ok {
+		start, end := w.makeExtents(w.blocks[w.index].Start)
+		w.blocks[w.index+1] = makeBlock(start, end)
+	}
+	w.index++
+
+	log.Printf("!     Block %d: start:%d  end:%d", w.index, w.blocks[w.index].Start, w.blocks[w.index].End)
+
+	return true
 }
 
-func (w *Window) MoveNext() {
-	delta := w.origin + w.size
-
-	if delta > w.file.MaxOffset() {
-		return
+func (w *Window) MoveNext() bool {
+	if w.index == 0 {
+		return false
 	}
 
-	w.origin = delta
-	w.makeExtents()
+	w.index--
+
+	log.Printf("!     Block %d: start:%d  end:%d", w.index, w.blocks[w.index].Start, w.blocks[w.index].End)
+
+	return true
+}
+
+func (w *Window) Pct() float64 {
+	lcnt, err := w.file.Lines()
+	if err != nil {
+		panic(err)
+	}
+
+	return math.Min(100, (float64((w.index+1)*w.lines)/float64(lcnt))*100.0)
+}
+
+func (w *Window) Position() (int, int) {
+	lcnt, err := w.file.Lines()
+	if err != nil {
+		panic(err)
+	}
+
+	return w.index + 1, (lcnt / w.lines) + 1
 }
 
 func (w *Window) Get() ([]string, error) {
-
-	if w.start == w.end {
+	if w.blocks[w.index].Size == 0 {
 		return []string{}, EOF
 	}
 
-	buf, err := w.file.doRead(w.start, w.size)
+	buf, err := w.file.doRead(w.blocks[w.index].Start, w.blocks[w.index].Size)
 	if err != nil {
 		return []string{}, err
 	}
@@ -94,8 +139,8 @@ func (w *Window) Get() ([]string, error) {
 	return lines, nil
 }
 
-func (w *Window) makeExtents() {
-	var end int64 = w.origin
+func (w *Window) makeExtents(origin int64) (int64, int64) {
+	var end int64 = origin
 	var start int64 = end
 
 	for i := 0; i < w.lines; i++ {
@@ -117,9 +162,7 @@ func (w *Window) makeExtents() {
 		}
 	}
 
-	w.start = start
-	w.end = end
-	w.size = end - start
+	return start, end
 }
 
 /* window.go ends here. */

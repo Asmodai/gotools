@@ -110,6 +110,11 @@ func (mf *MemFile) PrevNewLine(origin int64) int64 {
 			break
 		}
 
+		if pos >= mf.MaxOffset()-1 {
+			pos = mf.MaxOffset() - 1
+			break
+		}
+
 		chr = mf.rdr.At(int(pos))
 		if chr == '\n' {
 			// If we're at the insertion point, ignore it.
@@ -225,11 +230,9 @@ func (mf *MemFile) ReadNextLine() (string, error) {
 
 func (mf *MemFile) MakeWindow(lines int) *Window {
 	wnd := &Window{
-		file:   mf,
-		lines:  lines,
-		origin: 0,
-		start:  0,
-		end:    0,
+		file:  mf,
+		lines: lines,
+		index: 0,
 	}
 
 	wnd.Setup()

@@ -23,7 +23,12 @@
 package entity
 
 import (
+	"github.com/Asmodai/gotools/internal/hacks"
+
 	"fmt"
+	"io"
+	"os"
+	"sort"
 	"strings"
 	"time"
 )
@@ -36,36 +41,82 @@ type Base struct {
 	Rest    Line
 }
 
-func (b *Base) Display() {
-	b.displayHead()
-	b.displayRest()
-	fmt.Printf("\n")
+func (b *Base) levelColor(text string) string {
+	var esc string = ""
+
+	switch b.Level {
+	case "INFO":
+		esc = "\x1b[1;32m"
+
+	case "DEBUG":
+		esc = "\x1b[1;33m"
+
+	case "WARN":
+		esc = "\x1b[0;31m"
+
+	case "FATAL":
+		esc = "\x1b[1;37;41m"
+
+	default:
+		esc = "\x1b[0m"
+	}
+
+	return fmt.Sprintf("%s%s\x1b[0m", esc, text)
 }
 
-func (b *Base) displayHead() {
-	fmt.Printf(
-		`%s
-   Time (UTC):   %v
-   Time (Local): %v
-   Caller:       %s
-   Message:      %s
-`,
+func (b *Base) fieldColor(text string) string {
+	return fmt.Sprintf("\x1b[1;36m%s\x1b[0m")
+}
+
+func (b *Base) Short(width int) string {
+	t := b.TStamp.Format(time.RFC1123)
+	w := width - (5 + len(t) + 2)
+
+	return fmt.Sprintf(
+		"%s \x1b[1;36m%v\x1b[0m %s",
+		b.levelColor(hacks.Padable(b.Level).Pad(5)),
+		b.TStamp.Format(time.RFC1123),
+		hacks.Elidable(b.Message).Elide(w),
+	)
+}
+
+func (b *Base) DisplayTo(w io.Writer) {
+	b.displayHead(w)
+	b.displayRest(w)
+	fmt.Fprintf(w, "\n")
+}
+
+func (b *Base) Display() {
+	b.DisplayTo(os.Stdout)
+}
+
+func (b *Base) displayHead(w io.Writer) {
+	fmt.Fprintf(
+		w,
+		"\x1b[1;36mLevel:\x1b[0m        %s\n\x1b[1;36mTime (UTC):\x1b[0m   %v\n\x1b[1;36mTime (Local):\x1b[0m %v\n\x1b[1;36mCaller:\x1b[0m       %s\n\n\x1b[1;36mMessage:\x1b[0m\n%s\n",
 		b.Level,
-		b.TStamp.UTC(),
-		b.TStamp.Local(),
+		b.TStamp.UTC().Format(time.RFC1123),
+		b.TStamp.Local().Format(time.RFC1123),
 		b.Caller,
 		b.Message,
 	)
 }
 
-func (b *Base) displayRest() {
+func (b *Base) displayRest(w io.Writer) {
 	if len(b.Rest) == 0 {
 		return
 	}
 
-	fmt.Printf("   Rest:\n")
-	for k, v := range b.Rest {
-		fmt.Printf("      %s: %v\n", k, v)
+	// Meh.
+	keys := make([]string, 0, len(b.Rest))
+	for k := range b.Rest {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	fmt.Fprintf(w, "\n")
+	for _, k := range keys {
+		fmt.Fprintf(w, "\x1b[1;36m%s:\x1b[0m %v\n", k, b.Rest[k])
 	}
 }
 
@@ -89,6 +140,7 @@ func (b *Base) Compose(key string, value interface{}) bool {
 
 	case "msg":
 		b.Message = value.(string)
+		return true
 	}
 
 	return false

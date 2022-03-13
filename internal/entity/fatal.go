@@ -24,6 +24,8 @@ package entity
 
 import (
 	"fmt"
+	"io"
+	"os"
 )
 
 type Fatal struct {
@@ -31,31 +33,24 @@ type Fatal struct {
 	Trace Stacktrace
 }
 
-func (f *Fatal) Display() {
-	f.displayHead()
-	f.displayTrace()
-	f.displayRest()
-	fmt.Printf("\n")
+func (f *Fatal) DisplayTo(w io.Writer) {
+	f.displayHead(w)
+	f.displayRest(w)
+	f.displayTrace(w)
+	fmt.Fprintf(w, "\n")
 }
 
-func (f *Fatal) displayTrace() {
+func (f *Fatal) Display() {
+	f.DisplayTo(os.Stdout)
+}
+
+func (f *Fatal) displayTrace(w io.Writer) {
 	if len(f.Trace) == 0 {
 		return
 	}
 
-	fmt.Printf("   Stack trace:\n")
-	f.Trace.Display()
-}
-
-func (f *Fatal) displayRest() {
-	if len(f.Rest) == 0 {
-		return
-	}
-
-	fmt.Printf("   Rest:\n")
-	for k, v := range f.Rest {
-		fmt.Printf("      %s: %v\n", k, v)
-	}
+	fmt.Fprintf(w, "\n\x1b[1;36mStack trace:\x1b[0m\n")
+	f.Trace.DisplayTo(w)
 }
 
 func (f *Fatal) Compose(key string, value interface{}) bool {
