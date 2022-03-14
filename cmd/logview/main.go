@@ -46,6 +46,7 @@ type LogViewer struct {
 	log *memfile.MemFile
 	wnd *memfile.Window
 	gui *gocui.Gui
+	vm  *search.VM
 
 	maxX  int
 	maxY  int
@@ -152,6 +153,13 @@ func (lv *LogViewer) updateDetails(g *gocui.Gui) error {
 
 	v.Clear()
 
+	if len(lv.ents) == 0 {
+		return nil
+	}
+
+	if lv.logPane.selected > len(lv.ents) {
+		return nil
+	}
 	lv.ents[lv.logPane.selected].DisplayTo(v)
 
 	return nil
@@ -362,7 +370,6 @@ func (lv *LogViewer) Run() error {
 	return nil
 }
 
-/*
 func main() {
 	gui := NewLogViewer()
 	if err := gui.Init(); err != nil {
@@ -374,8 +381,8 @@ func main() {
 	}
 
 }
-*/
 
+/*
 func shite(things []string) {
 	logs, err := entity.ParseLog(things)
 	if err != nil {
@@ -423,24 +430,43 @@ func main() {
 	}
 	shite(meh)
 
-	/*
-		srdr := strings.NewReader("(command:\"test\")\n OR\n (command:ass)")
-		lexer := search.NewLexer(srdr)
-		for {
-			pos, tok, lit := lexer.Lex()
-			if tok == search.EOF {
-				break
-			}
-
-			fmt.Printf("%d:%d\t%s\t%s\n", pos.Line, pos.Column, tok, lit)
-		}
-	*/
+	code := "(message:\"test.*\") AND ((NOT level:\"fatal\" junk:\"steef\") OR (cheese:\"yes\"))"
+	code = "(msg:\"[Mm]icrosoft\") AND (level:\"info\")"
 	parser := search.NewParser()
-	err = parser.Parse("(message:\"test.*\") AND ((NOT level:\"fatal\" junk:\"steef\") OR (cheese:\"yes\"))")
+	prog, err := parser.Parse(code)
 	if err != nil {
 		log.Panicln(err)
 	}
 
 	vm := search.NewVM()
-	log.Printf("VM: %s\n", vm)
+	vm.SetDebug(true)
+	vm.LoadCode(prog.Optimised)
+	log.Printf("Source: %s\n", code)
+	log.Printf("Code:\n%s\n", prog.Pretty())
+
+	var status error = nil
+	var buf string
+	for status != memfile.EOF {
+		buf, status = mfile.ReadPrevLine()
+		if status != nil && status != memfile.BOF {
+			log.Panicln(status)
+		}
+		if status == memfile.BOF {
+			break
+		}
+
+		//fmt.Printf("Line: [%s]\n", buf)
+		if err := vm.SetBuffer(buf); err != nil {
+			log.Panicln(err)
+		}
+
+		vm.Run()
+		if vm.Result() != 1 {
+			//log.Printf("Result: NO MATCH")
+		} else {
+			//log.Printf("Result: MATCH")
+			log.Printf("Line: '%s'", buf)
+		}
+	}
 }
+*/
