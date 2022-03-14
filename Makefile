@@ -4,7 +4,8 @@ VERSION ?= 0.0.0
 CMD_DIR  = $(PACKAGE)/cmd
 ROOT_DIR = $(PWD)
 
-LOGREAD = logread
+LOGVIEW = logview
+LOGFIND = logfind
 
 .phony: configs clean
 
@@ -22,16 +23,25 @@ listdeps:
 	@echo Listing dependencies
 	@go list -m all
 
-build: logread
+build: logview logfind
 
-logread: deps
+logview: deps
 	$(eval GIT_VERSION = $(shell scripts/tag2semver.sh $(VERSION) 2>/dev/null))
-	@echo "Building $(LOGREAD) with '$(GIT_VERSION)'"
+	@echo "Building $(LOGVIEW) with '$(GIT_VERSION)'"
 	@go build                                               \
 		-tags=go_json                                   \
-		-o $(ROOT_DIR)/bin/$(LOGREAD)                   \
+		-o $(ROOT_DIR)/bin/$(LOGVIEW)                   \
 		-ldflags "-s -w $(GIT_VERSION)"                 \
-		$(CMD_DIR)/$(LOGREAD)
+		$(CMD_DIR)/$(LOGVIEW)
+
+logfind: deps
+	$(eval GIT_VERSION = $(shell scripts/tag2semver.sh $(VERSION) 2>/dev/null))
+	@echo "Building $(LOGFIND) with '$(GIT_VERSION)'"
+	@go build                                               \
+		-tags=go_json                                   \
+		-o $(ROOT_DIR)/bin/$(LOGFIND)                   \
+		-ldflags "-s -w $(GIT_VERSION)"                 \
+		$(CMD_DIR)/$(LOGFIND)
 
 test: deps
 	@echo Running tests
