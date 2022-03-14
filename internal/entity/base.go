@@ -23,7 +23,7 @@
 package entity
 
 import (
-	"github.com/Asmodai/gotools/internal/hacks"
+	"github.com/Asmodai/gohacks/utils"
 
 	"fmt"
 	"io"
@@ -74,9 +74,9 @@ func (b *Base) Short(width int) string {
 
 	return fmt.Sprintf(
 		"%s \x1b[1;36m%v\x1b[0m %s",
-		b.levelColor(hacks.Padable(b.Level).Pad(5)),
+		b.levelColor(utils.Padable(b.Level).Pad(5)),
 		b.TStamp.Format(time.RFC1123),
-		hacks.Elidable(b.Message).Elide(w),
+		utils.Elidable(b.Message).Elide(w),
 	)
 }
 

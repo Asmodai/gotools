@@ -115,11 +115,13 @@ func MakeLabel(target string) *Label {
 }
 
 func (o Label) String() string {
-	if o.Offset > 0 {
-		return fmt.Sprintf("%d", o.Offset)
-	}
+	/*
+		if o.Offset > 0 {
+			return fmt.Sprintf("%d", o.Offset)
+		}
+	*/
 
-	return fmt.Sprintf("%s[%-5s]", o.TypeString(), o.Target)
+	return fmt.Sprintf("%-5s", o.Target)
 }
 
 func (o Label) Bytecode() string {

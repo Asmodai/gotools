@@ -52,7 +52,7 @@ func (o *Optimiser) Pretty() string {
 	out := ""
 
 	for idx, _ := range o.Optimised {
-		out += fmt.Sprintf("%04d:\t%s\n", idx, o.Optimised[idx].String())
+		out += fmt.Sprintf("%03d:\t%s\n", idx, o.Optimised[idx].String())
 	}
 
 	return out

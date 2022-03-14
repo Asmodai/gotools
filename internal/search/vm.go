@@ -23,7 +23,7 @@
 package search
 
 import (
-	"github.com/Asmodai/gotools/internal/hacks"
+	"github.com/Asmodai/gohacks/utils"
 
 	"encoding/json"
 
@@ -160,7 +160,7 @@ func (vm *VM) execute() {
 					vm.Debug("\x1b[33mAND\x1b[0m: POP = %s\n", obj)
 					vals = append(vals, obj.(*Integer).Literal)
 				}
-				res := hacks.IntAll(vals, func(i int) bool {
+				res := utils.IntAll(vals, func(i int) bool {
 					return i == 1
 				})
 				vm.Debug("\x1b[33mAND\x1b[0m: Result = %t\n", res)
@@ -179,7 +179,7 @@ func (vm *VM) execute() {
 					vm.Debug("\x1b[33mOR\x1b[0m: POP = %s\n", obj)
 					vals = append(vals, obj.(*Integer).Literal)
 				}
-				res := hacks.IntAny(vals, func(i int) bool {
+				res := utils.IntAny(vals, func(i int) bool {
 					return i == 1
 				})
 				vm.Debug("\x1b[33mOR\x1b[0m: Result = %t\n", res)
@@ -198,7 +198,7 @@ func (vm *VM) execute() {
 					vm.Debug("\x1b[33mNOT\x1b[0m: POP = %s\n", obj)
 					vals = append(vals, obj.(*Integer).Literal)
 				}
-				res := hacks.IntAll(vals, func(i int) bool {
+				res := utils.IntAll(vals, func(i int) bool {
 					return i == 0
 				})
 				vm.Debug("\x1b[33mNOT\x1b[0m: Result = %t\n", res)
