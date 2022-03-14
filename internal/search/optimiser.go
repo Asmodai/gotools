@@ -24,7 +24,6 @@ package search
 
 import (
 	"fmt"
-	"log"
 )
 
 type Optimiser struct {
@@ -78,12 +77,12 @@ func (o *Optimiser) assemble() {
 	lt := GetLabelTable()
 
 	for idx, _ := range o.Optimised {
-		// Resolve labels
+		// Resolve labels.
 		lbl := o.Optimised[idx].Label
 		if lbl != nil {
 			// XXX ERROR HANDLING!
 			if lt.Lookup(lbl.Target) != nil {
-				lbl.Offset = uint16(idx)
+				lbl.Offset = idx
 			}
 		}
 	}
@@ -97,13 +96,13 @@ func (o *Optimiser) Optimise() {
 		case ISN_OR:
 			o.appendIsn(o.Unoptimised[idx])
 			lastStackOp, ok := o.findLastStackOp(idx - 1)
-			log.Printf("Last stack op from %d: %d %t", idx, lastStackOp, ok)
 			if ok && lastStackOp > 1 {
 				// We have multiple stack ops, we can short-circuit!
 				label := GetLabelTable().MakeLabel()
 				o.appendIsn(NewInst(ISN_JZ, label))
+				endFragment = append(endFragment, &Inst{Instruction: ISN_RET})
 				endFragment = append(endFragment, &Inst{Label: label, Instruction: ISN_CLEAR})
-				endFragment = append(endFragment, &Inst{Instruction: ISN_PUSH, Operand: &Integer{Literal: 0}})
+				endFragment = append(endFragment, &Inst{Instruction: ISN_PUSH, Operand: MakeInteger(0)})
 			}
 
 		default:
@@ -112,6 +111,7 @@ func (o *Optimiser) Optimise() {
 	}
 
 	o.Optimised = append(o.Optimised, endFragment...)
+	o.Optimised = append(o.Optimised, &Inst{Instruction: ISN_RET})
 	o.assemble()
 }
 

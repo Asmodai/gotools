@@ -1,5 +1,5 @@
 /*
- * labels.go --- Label handling.
+ * program.go --- Woohoo, a program!
  *
  * Copyright (c) 2022 Paul Ward <asmodai@gmail.com>
  *
@@ -23,53 +23,62 @@
 package search
 
 import (
-	"fmt"
-	"sync"
+	"log"
 )
 
-var (
-	LabelOnce sync.Once
-	LabelInst *LabelTable
+const (
+	PROGRAM_CAPACITY = 512
 )
 
-type LabelTable struct {
-	gensym int
-	labels map[string]*Label
+type ProgramType [PROGRAM_CAPACITY]*Inst
+
+type Program struct {
+	size int
+	data ProgramType
 }
 
-func (lt *LabelTable) Lookup(sym string) *Label {
-	lbl, ok := lt.labels[sym]
-	if !ok {
-		return nil
+func NewProgram() Program {
+	return Program{
+		size: 0,
+		data: ProgramType{},
+	}
+}
+
+func (s *Program) Len() int {
+	return s.size
+}
+
+func (s *Program) Dump() {
+	log.Printf("VM: Currently loaded program")
+	for i := 0; i < s.Len(); i++ {
+		log.Printf("%s", s.data[i].String())
+	}
+}
+
+func (s *Program) Push(val *Inst) bool {
+	if s.size == PROGRAM_CAPACITY {
+		return false
 	}
 
-	return lbl
+	s.data[s.size] = val
+	s.size++
+	return true
 }
 
-func (lt *LabelTable) makeSym() string {
-	lt.gensym++
+func (s *Program) Pop() (*Inst, bool) {
+	if s.size == 0 {
+		return nil, false
+	}
 
-	return fmt.Sprintf("L%d", lt.gensym)
+	val := s.data[s.size]
+	if val == nil {
+		return nil, false
+	}
+
+	s.data[s.size] = nil
+	s.size--
+
+	return val, true
 }
 
-func (lt *LabelTable) MakeLabel() *Label {
-	sym := lt.makeSym()
-	label := MakeLabel(sym)
-
-	lt.labels[sym] = label
-
-	return label
-}
-
-func GetLabelTable() *LabelTable {
-	LabelOnce.Do(func() {
-		LabelInst = &LabelTable{
-			gensym: 0,
-			labels: map[string]*Label{},
-		}
-	})
-
-	return LabelInst
-}
-
-/* labels.go ends here. */
+/* program.go ends here. */

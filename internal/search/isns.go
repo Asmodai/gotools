@@ -37,6 +37,7 @@ const (
 	ISN_JZ
 	ISN_JNZ
 	ISN_CLEAR
+	ISN_RET
 	ISN_MAX
 )
 
@@ -53,6 +54,7 @@ var isns []string = []string{
 	ISN_JZ:    "JZ",
 	ISN_JNZ:   "JNZ",
 	ISN_CLEAR: "CLEAR",
+	ISN_RET:   "RET",
 }
 
 func (i Isn) String() string {

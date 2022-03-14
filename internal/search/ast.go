@@ -166,10 +166,7 @@ func (s *Syntax) Build() []*Inst {
 
 	case TOK_TERM:
 		field, regex := s.compileSearchTerm()
-		result = append(result, NewInst(ISN_FIND, &Term{
-			Field:   field,
-			Pattern: regex,
-		}))
+		result = append(result, NewInst(ISN_FIND, MakeTerm(field, regex)))
 	}
 
 	return result

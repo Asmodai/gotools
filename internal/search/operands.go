@@ -24,7 +24,24 @@ package search
 
 import (
 	"fmt"
+	"regexp"
 )
+
+const (
+	OPERAND_INVALID = iota
+	OPERAND_INTEGER
+	OPERAND_LABEL
+	OPERAND_TERM
+)
+
+type OperandType int
+
+var operandtypes []string = []string{
+	OPERAND_INVALID: "Invalid",
+	OPERAND_INTEGER: "Integer",
+	OPERAND_LABEL:   "Label",
+	OPERAND_TERM:    "Term",
+}
 
 // ==================================================================
 // {{{ Interface and base struct:
@@ -32,9 +49,20 @@ import (
 type IOperand interface {
 	String() string
 	Bytecode() string
+	Type() OperandType
+	TypeString() string
 }
 
 type Operand struct {
+	optype OperandType
+}
+
+func (o *Operand) Type() OperandType {
+	return o.optype
+}
+
+func (o *Operand) TypeString() string {
+	return fmt.Sprintf("%-8s", operandtypes[o.optype])
 }
 
 // }}}
@@ -48,8 +76,17 @@ type Integer struct {
 	Literal int
 }
 
+func MakeInteger(val int) *Integer {
+	obj := &Integer{
+		Literal: val,
+	}
+	obj.optype = OPERAND_INTEGER
+
+	return obj
+}
+
 func (i Integer) String() string {
-	return fmt.Sprintf("%d", i.Literal)
+	return fmt.Sprintf("%s[%d]", i.TypeString(), i.Literal)
 }
 
 func (i Integer) Bytecode() string {
@@ -65,7 +102,16 @@ func (i Integer) Bytecode() string {
 type Label struct {
 	Operand
 	Target string
-	Offset uint16
+	Offset int
+}
+
+func MakeLabel(target string) *Label {
+	obj := &Label{
+		Target: target,
+	}
+	obj.optype = OPERAND_LABEL
+
+	return obj
 }
 
 func (o Label) String() string {
@@ -73,7 +119,7 @@ func (o Label) String() string {
 		return fmt.Sprintf("%d", o.Offset)
 	}
 
-	return fmt.Sprintf("%-5s", o.Target)
+	return fmt.Sprintf("%s[%-5s]", o.TypeString(), o.Target)
 }
 
 func (o Label) Bytecode() string {
@@ -88,12 +134,35 @@ func (o Label) Bytecode() string {
 
 type Term struct {
 	Operand
-	Field   string
-	Pattern string
+	Field    string
+	Pattern  string
+	Compiled *regexp.Regexp
+}
+
+func MakeTerm(field, pattern string) *Term {
+	// XXX This needs to emit an error
+	compiled, err := regexp.Compile("(?i)" + pattern)
+	if err != nil {
+		compiled = nil
+	}
+
+	obj := &Term{
+		Field:    field,
+		Pattern:  pattern,
+		Compiled: compiled,
+	}
+	obj.optype = OPERAND_TERM
+
+	return obj
 }
 
 func (o Term) String() string {
-	return fmt.Sprintf("%s %s", o.Field, o.Pattern)
+	compiled := ""
+	if o.Compiled != nil {
+		compiled = " (compiled)"
+	}
+
+	return fmt.Sprintf("%s[%s \"%s\"%s]", o.TypeString(), o.Field, o.Pattern, compiled)
 }
 
 func (o Term) Bytecode() string {

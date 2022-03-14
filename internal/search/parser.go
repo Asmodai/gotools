@@ -24,7 +24,6 @@ package search
 
 import (
 	"fmt"
-	"log"
 	"sort"
 	"strings"
 )
@@ -39,6 +38,7 @@ type element struct {
 type Parser struct {
 	lexer  *Lexer
 	tokens []element
+	ast    *Syntax
 }
 
 type ByToken []element
@@ -96,7 +96,7 @@ func (p *Parser) buildSearchTerm(idx int) (string, error) {
 	}
 
 	re := fmt.Sprintf(
-		`"%s":"%s"`,
+		"%s:%s",
 		p.tokens[idx].literal,
 		p.tokens[idx+2].literal,
 	)
@@ -130,9 +130,13 @@ func (p *Parser) makeAST(pos int) (*Syntax, error) {
 	return res, err
 }
 
-func (p *Parser) makeNodeOrChild(root *Syntax, term string) bool {
+func (p *Parser) makeTerm(root *Syntax, term string) bool {
 	switch root.token {
-	case TOK_AND, TOK_OR, TOK_NOT:
+	case TOK_ILLEGAL:
+		root.token = TOK_TERM
+		root.literal = term
+
+	default:
 		child := MakeAST()
 		child.token = TOK_TERM
 		child.literal = term
@@ -140,15 +144,10 @@ func (p *Parser) makeNodeOrChild(root *Syntax, term string) bool {
 
 		// Reorder so terms come last
 		sort.Sort(BySyntax(root.children))
-		return true
-
-	case TOK_ILLEGAL:
-		root.token = TOK_TERM
-		root.literal = term
-		return true
 	}
 
-	return false
+	return true
+
 }
 
 func (p *Parser) doMakeAST(root *Syntax, pos, nest int) (*Syntax, int, error) {
@@ -176,15 +175,23 @@ func (p *Parser) doMakeAST(root *Syntax, pos, nest int) (*Syntax, int, error) {
 			case TOK_ILLEGAL, p.tokens[pos].token:
 				// 'Empty' or the same token.
 				root.token = p.tokens[pos].token
-			default:
-				return nil, 0, p.makeError(
-					p.tokens[pos],
-					fmt.Sprintf(
-						"Boolean operator already set! %s %s",
-						root.token,
-						p.tokens[pos].token,
-					),
-				)
+			case TOK_TERM:
+				child := MakeAST()
+				child.token = root.token
+				child.literal = root.literal
+				root.token = p.tokens[pos].token
+				root.literal = ""
+				root.AddChild(child)
+				/*
+					return nil, 0, p.makeError(
+						p.tokens[pos],
+						fmt.Sprintf(
+							"Boolean operator already set! %s %s",
+							root.token,
+							p.tokens[pos].token,
+						),
+					)
+				*/
 			}
 
 		case TOK_TERM:
@@ -192,7 +199,7 @@ func (p *Parser) doMakeAST(root *Syntax, pos, nest int) (*Syntax, int, error) {
 			if err != nil {
 				return nil, 0, err
 			}
-			ok := p.makeNodeOrChild(root, term)
+			ok := p.makeTerm(root, term)
 			if !ok {
 				return nil, 0, p.makeError(
 					p.tokens[pos],
@@ -219,74 +226,35 @@ func (p *Parser) PrintTokens() {
 	}
 }
 
-func (p *Parser) Parse(source string) error {
+func (p *Parser) PrintSyntax() {
+	if p.ast == nil {
+		fmt.Printf("Syntax not parsed yet!")
+		return
+	}
+
+	fmt.Printf("%s\n", p.ast)
+}
+
+func (p *Parser) Parse(source string) (*Optimiser, error) {
 	p.lexer = NewLexer(strings.NewReader(source))
 	p.tokens = []element{}
 
 	// Tokenise the sauce.
 	p.lexTokens()
 
-	// XXX
-	log.Printf("Source: %s\n", source)
-	log.Printf("\nTokens:\n")
-	p.PrintTokens()
-
 	// Parse the tokens
-	re, err := p.makeAST(0)
+	ast, err := p.makeAST(0)
 	if err != nil {
-		log.Panicln(err)
+		return nil, err
 	}
+	p.ast = ast
 
-	log.Printf("\nResult:\n%s\n", re)
-
-	result := re.Build()
-
-	optimiser := NewOptimiser(result)
+	// Build and optimise the AST
+	built := ast.Build()
+	optimiser := NewOptimiser(built)
 	optimiser.Optimise()
 
-	log.Printf("\nCode:\n")
-	for _, elt := range result {
-		fmt.Printf("%s\n", elt)
-	}
-
-	log.Printf("\nOptimised:\n%s\n", optimiser.Pretty())
-
-	return err
+	return optimiser, err
 }
-
-/*
-
-  level:"fatal" ->
-      FIND   level:"fatal"
-
-  level:"fatal" AND message:"Not*" ->
-      FIND   level "fatal"
-      FIND   message "Not*"
-			AND
-
-  (level:"fatal" AND (message:"Not*" OR message:"Cannot*")) ->
-      FIND   message "Not*"
-      FIND   message "Cannot*"
-      OR
-      JZ     L1
-      FIND   level "fatal"
-      AND
-  L1: CLEAR
-      PUSH   0
-
-  (message:"test.*") AND ((NOT level:"fatal" junk:"steef") OR (cheese:"yes"))
-      FIND   level "fatal"
-      FIND   junk  "steef"
-      NOT
-      FIND   cheese "yes"
-      OR
-      JZ     L1
-      FIND   message "test*"
-      AND
-  L1: CLEAR
-      PUSH   0
-
-
-*/
 
 /* parser.go ends here. */

@@ -1,5 +1,5 @@
 /*
- * labels.go --- Label handling.
+ * stack.go --- Woohoo, a stack!
  *
  * Copyright (c) 2022 Paul Ward <asmodai@gmail.com>
  *
@@ -23,53 +23,64 @@
 package search
 
 import (
-	"fmt"
-	"sync"
+	"log"
 )
 
-var (
-	LabelOnce sync.Once
-	LabelInst *LabelTable
+const (
+	STACK_CAPACITY = 512
 )
 
-type LabelTable struct {
-	gensym int
-	labels map[string]*Label
+type StackType [STACK_CAPACITY]interface{}
+
+type Stack struct {
+	size int
+	data StackType
 }
 
-func (lt *LabelTable) Lookup(sym string) *Label {
-	lbl, ok := lt.labels[sym]
-	if !ok {
-		return nil
+func NewStack() Stack {
+	return Stack{
+		size: 0,
+		data: StackType{},
+	}
+}
+
+func (s *Stack) Len() int {
+	return s.size
+}
+
+func (s *Stack) Dump() {
+	log.Printf("VM: Stack contents")
+	for i := 0; i < s.Len(); i++ {
+		log.Printf("%03d: %s", i, s.data[i])
+	}
+}
+
+func (s *Stack) Clear() {
+	s.data = StackType{}
+	s.size = 0
+}
+
+func (s *Stack) Push(val interface{}) bool {
+	if s.size == STACK_CAPACITY {
+		return false
 	}
 
-	return lbl
+	s.data[s.size] = val
+	s.size++
+	return true
 }
 
-func (lt *LabelTable) makeSym() string {
-	lt.gensym++
+func (s *Stack) Pop() (interface{}, bool) {
+	s.size--
 
-	return fmt.Sprintf("L%d", lt.gensym)
+	val := s.data[s.size]
+	if val == nil {
+		return nil, false
+	}
+
+	s.data[s.size] = nil
+
+	return val, true
 }
 
-func (lt *LabelTable) MakeLabel() *Label {
-	sym := lt.makeSym()
-	label := MakeLabel(sym)
-
-	lt.labels[sym] = label
-
-	return label
-}
-
-func GetLabelTable() *LabelTable {
-	LabelOnce.Do(func() {
-		LabelInst = &LabelTable{
-			gensym: 0,
-			labels: map[string]*Label{},
-		}
-	})
-
-	return LabelInst
-}
-
-/* labels.go ends here. */
+/* stack.go ends here. */
