@@ -103,6 +103,7 @@ func (o *Optimiser) Optimise() {
 				label := GetLabelTable().MakeLabel()
 				o.appendIsn(NewInst(ISN_JZ, label))
 				endFragment = append(endFragment, &Inst{Label: label, Instruction: ISN_CLEAR})
+				endFragment = append(endFragment, &Inst{Instruction: ISN_PUSH, Operand: &Integer{Literal: 0}})
 			}
 
 		default:

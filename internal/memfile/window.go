@@ -23,7 +23,6 @@
 package memfile
 
 import (
-	"log"
 	"math"
 	"strings"
 )
@@ -66,9 +65,7 @@ func (w *Window) Setup() {
 	w.blocks = tracker{}
 	w.index = 0
 
-	start, end := w.makeExtents(w.file.MaxOffset() - 1)
-
-	log.Printf("!     Block %d: start:%d  end:%d", w.index, start, end)
+	start, end := w.makeExtents(w.file.MaxOffset())
 
 	w.blocks[w.index] = makeBlock(start, end)
 }
@@ -84,8 +81,6 @@ func (w *Window) MovePrev() bool {
 	}
 	w.index++
 
-	log.Printf("!     Block %d: start:%d  end:%d", w.index, w.blocks[w.index].Start, w.blocks[w.index].End)
-
 	return true
 }
 
@@ -95,8 +90,6 @@ func (w *Window) MoveNext() bool {
 	}
 
 	w.index--
-
-	log.Printf("!     Block %d: start:%d  end:%d", w.index, w.blocks[w.index].Start, w.blocks[w.index].End)
 
 	return true
 }
@@ -140,22 +133,25 @@ func (w *Window) Get() ([]string, error) {
 }
 
 func (w *Window) makeExtents(origin int64) (int64, int64) {
-	var end int64 = origin
-	var start int64 = end
+	var pos int64 = origin
+	var end int64 = pos
+	var start int64 = pos
 
 	for i := 0; i < w.lines; i++ {
 		// Locate previous newline
-		start = w.file.PrevNewLine(start - 1)
+		pos, start, _ = w.file.PrevNewLine(pos)
 
 		// If we reach BOF, then we're done.
-		if start == 0 {
+		if pos == 0 {
 			break
 		}
 	}
 
-	end = start
+	// We want the starting newline to be included here.
+	start = pos
+
 	for i := 0; i < w.lines; i++ {
-		end = w.file.NextNewLine(end)
+		pos, _, end = w.file.NextNewLine(pos)
 
 		if end == w.file.MaxOffset() {
 			break

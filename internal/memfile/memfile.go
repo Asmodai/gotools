@@ -28,6 +28,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	//"log"
 )
 
 var (
@@ -94,81 +95,90 @@ func (mf *MemFile) Lines() (int, error) {
 	}
 }
 
-// Scan from the origin towards BOF looking for a newline.
-func (mf *MemFile) PrevNewLine(origin int64) int64 {
-	var pos int64 = origin
-	var chr byte
+func (mf *MemFile) GotoEnd() {
+	mf.pos = mf.MaxOffset()
+}
 
-	// If we hit BOF, return BOF.
-	if pos < 0 {
-		return 0
+// Scan from the origin towards BOF looking for a newline.
+func (mf *MemFile) PrevNewLine(origin int64) (int64, int64, int64) {
+	var max int64 = mf.MaxOffset()
+	var pos int64 = origin
+	var end int64 = max
+	var start int64 = origin
+	var ch byte
+
+	if pos <= 0 {
+		return 0, 0, 0
 	}
 
+	if pos >= max {
+		pos = max
+	}
+
+	//log.Printf("START pos:%d\n", pos)
 	for {
-		// If we reach BOF here, there's nothing else to be done.
 		if pos == 0 {
+			start = pos
 			break
 		}
 
-		if pos >= mf.MaxOffset()-1 {
-			pos = mf.MaxOffset() - 1
-			break
-		}
-
-		chr = mf.rdr.At(int(pos))
-		if chr == '\n' {
-			// If we're at the insertion point, ignore it.
+		ch = mf.rdr.At(int(pos))
+		//log.Printf("      pos:%d  ch:'%c'\n", pos, ch)
+		if ch == '\n' {
 			if pos == origin {
+				end = pos
 				pos--
 				continue
 			}
 
-			// Move back from the newline.
-			//pos++
+			start = pos + 1
 			break
 		}
 
-		// Go to previous character.
 		pos--
 	}
 
-	return pos
+	//log.Printf("END   pos:%d  start:%d  end:%d", pos, start, end)
+	return pos, start, end
 }
 
 // Scan from the origin towards EOF looking for a newline.
-func (mf *MemFile) NextNewLine(origin int64) int64 {
+func (mf *MemFile) NextNewLine(origin int64) (int64, int64, int64) {
+	var max int64 = mf.MaxOffset()
 	var pos int64 = origin
-	var chr byte
+	var end int64 = origin
+	var start int64
+	var ch byte
 
-	// If we hit EOF, return EOF.
-	if pos > mf.MaxOffset() {
-		pos = mf.MaxOffset()
+	if pos >= max {
+		return 0, 0, 0
 	}
 
+	//log.Printf("START pos:%d\n", pos)
 	for {
-		// If we reach EOF here, there's nothing else to be done.
-		if pos == mf.MaxOffset() {
+		if pos == max {
+			end = pos
 			break
 		}
 
-		chr = mf.rdr.At(int(pos))
-		if chr == '\n' {
-			// If we're at the insertion point, ignore it.
+		ch = mf.rdr.At(int(pos))
+		//log.Printf("      pos:%d  ch:'%c'\n", pos, ch)
+		if ch == '\n' {
 			if pos == origin {
 				pos++
+				start = pos
 				continue
 			}
 
-			// Move back from the newline.
-			//pos--
+			end = pos
 			break
 		}
 
-		// Go to next character.
 		pos++
 	}
 
-	return pos
+	//log.Printf("END   pos:%d  start:%d  end:%d", pos, start, end)
+	return pos, start, end
 }
 
 func (mf *MemFile) doRead(offset, size int64) (string, error) {
@@ -183,7 +193,7 @@ func (mf *MemFile) doRead(offset, size int64) (string, error) {
 		return "", errors.New("Could not read any data!")
 	}
 
-	mf.pos = offset
+	//mf.pos = offset
 
 	return string(buf), nil
 }
@@ -196,36 +206,49 @@ func (mf *MemFile) ReadPrevLine() (string, error) {
 	}
 
 	// Get previous newline position.
-	nl := mf.PrevNewLine(mf.pos)
-	if nl == 0 {
-		return "", BOF
-	}
+	/*
+		nl := mf.PrevNewLine(mf.pos)
+		size := mf.pos - nl
+	*/
+	pos, start, end := mf.PrevNewLine(mf.pos)
+	size := end - start
+	mf.pos = pos
 
-	size := mf.pos - nl
-	return mf.doRead(
-		mf.pos-size,
-		size,
-	)
+	//log.Printf("pos:%d  start:%d  size:%d\n", mf.pos, start, size)
+
+	return mf.doRead(start, size)
 }
 
 // Read the next line, moving towards EOL.
 func (mf *MemFile) ReadNextLine() (string, error) {
+	//log.Printf("AT    pos:%d  max:%d\n", mf.pos, mf.MaxOffset())
+
 	// If we're at the EOF, then signal it via error.
 	if mf.pos == mf.MaxOffset() {
 		return "", EOF
 	}
 
-	// Get next newline position.
-	nl := mf.NextNewLine(mf.pos)
-	if nl == mf.MaxOffset() {
-		return "", EOF
-	}
+	/*
+		// Get next newline position.
+		nl := mf.NextNewLine(mf.pos)
+		size := mf.pos + nl
+	*/
 
-	size := mf.pos + nl
-	return mf.doRead(
-		mf.pos+size,
-		size,
-	)
+	pos, start, end := mf.NextNewLine(mf.pos)
+	size := end - start
+	buf, err := mf.doRead(start, size)
+	mf.pos = pos
+	//log.Printf("'%s'\n", buf)
+
+	/*
+		return mf.doRead(
+			mf.pos+size,
+			size,
+		)
+	*/
+
+	//return mf.doRead(start, size)
+	return buf, err
 }
 
 func (mf *MemFile) MakeWindow(lines int) *Window {
