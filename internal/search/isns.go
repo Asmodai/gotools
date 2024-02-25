@@ -87,7 +87,8 @@ func (i *Inst) String() string {
 
 	buf := fmt.Sprintf("%-8s%-10s", label, i.Instruction)
 	if i.Operand != nil {
-		buf += fmt.Sprintf("%s", i.Operand)
+		//buf += fmt.Sprintf("%s", i.Operand)
+		buf += i.Operand.String()
 	}
 
 	return buf

@@ -83,7 +83,7 @@ func (vm *VM) LoadCode(code []*Inst) error {
 		return fmt.Errorf("Code too large!")
 	}
 
-	for idx, _ := range code {
+	for idx := range code {
 		vm.program.Push(code[idx])
 	}
 

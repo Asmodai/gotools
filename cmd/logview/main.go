@@ -25,7 +25,7 @@ package main
 import (
 	"github.com/Asmodai/gotools/internal/entity"
 	"github.com/Asmodai/gotools/internal/memfile"
-	"github.com/Asmodai/gotools/internal/search"
+//	"github.com/Asmodai/gotools/internal/search"
 
 	"github.com/awesome-gocui/gocui"
 
@@ -44,11 +44,6 @@ const (
 	IcoBoth        string = "Up Dn"
 )
 
-var (
-	thelogfile string = "/home/asmodai/Projects/Go/src/github.com/Asmodai/gotools/test.log"
-	//thelogfile string = "/home/asmodai/Projects/Go/src/github.com/Asmodai/PHITS/out.log"
-)
-
 func lineInView(v *gocui.View, dir int) bool {
 	_, y := v.Cursor()
 	line, err := v.Line(y + dir)
@@ -56,10 +51,12 @@ func lineInView(v *gocui.View, dir int) bool {
 	return err == nil && line != ""
 }
 
+//nolint:unused
 func lineBelow(v *gocui.View) bool {
 	return lineInView(v, 1)
 }
 
+//nolint:unused
 func lineAbove(v *gocui.View) bool {
 	return lineInView(v, -1)
 }
@@ -70,7 +67,7 @@ type LogViewer struct {
 	log   *memfile.MemFile
 	wnd   *memfile.Window
 	gui   *gocui.Gui
-	vm    *search.VM
+	//vm    *search.VM
 	flags *flag.FlagSet
 
 	maxX  int
@@ -121,14 +118,17 @@ func (lv *LogViewer) validate() {
 }
 
 func (lv *LogViewer) Init() error {
-	var err error = nil
+	var err error
 
 	lv.flags.BoolVar(&lv.Options.Debug, "debug", false, "Debug mode.")
 	lv.flags.StringVar(&lv.Options.File, "file", "", "Log file to parse.")
 	lv.flags.BoolVar(&lv.Options.Debug, "d", false, "Debug mode.")
 	lv.flags.StringVar(&lv.Options.File, "f", "", "Log file to parse.")
 
-	lv.flags.Parse(os.Args[1:])
+	if err := lv.flags.Parse(os.Args[1:]); err != nil {
+		return err
+	}
+
 	lv.validate()
 
 	if err = lv.log.Open(lv.Options.File); err != nil {
@@ -200,7 +200,7 @@ func (lv *LogViewer) updateLogs(g *gocui.Gui) error {
 		return err
 	}
 
-	for idx, _ := range lv.ents {
+	for idx := range lv.ents {
 		fmt.Fprintln(v, lv.ents[idx].Short(lv.logPane.width-1))
 
 		if idx == (lv.logPane.height - 1) {
@@ -377,13 +377,19 @@ func (lv *LogViewer) windowMove(dir int) func(g *gocui.Gui, v *gocui.View) error
 			lv.wnd.MovePrev()
 		}
 
-		lv.update(g)
-		v.SetCursor(cx, cy)
+		if err := lv.update(g); err != nil {
+			return err
+		}
+
+		if err := v.SetCursor(cx, cy); err != nil {
+			return err
+		}
 
 		return nil
 	}
 }
 
+//nolint:ineffassign,staticcheck
 func (lv *LogViewer) cursorMove(dir int) func(g *gocui.Gui, v *gocui.View) error {
 	return func(g *gocui.Gui, v *gocui.View) error {
 		cd := 1
@@ -395,7 +401,10 @@ func (lv *LogViewer) cursorMove(dir int) func(g *gocui.Gui, v *gocui.View) error
 			cx, cy := v.Cursor()
 
 			if lineInView(v, cd) {
-				v.SetCursor(cx, cy+cd)
+				if err := v.SetCursor(cx, cy+cd); err != nil {
+					return err
+				}
+
 				cx, cy = v.Cursor()
 			} else {
 				if lv.wnd == nil {
@@ -415,7 +424,9 @@ func (lv *LogViewer) cursorMove(dir int) func(g *gocui.Gui, v *gocui.View) error
 					cd = 0
 				}
 
-				lv.update(g)
+				if err := lv.update(g); err != nil {
+					return err
+				}
 
 				if move {
 					if cy == nl {
@@ -425,11 +436,15 @@ func (lv *LogViewer) cursorMove(dir int) func(g *gocui.Gui, v *gocui.View) error
 					cy = cd * (v.LinesHeight() - 2)
 				}
 
-				v.SetCursor(cx, cy)
+				if err := v.SetCursor(cx, cy); err != nil {
+					return err
+				}
 			}
 
 			lv.findSelected()
-			lv.updateDetails(g)
+			if err := lv.updateDetails(g); err != nil {
+				return err
+			}
 		}
 
 		return nil

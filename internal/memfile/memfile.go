@@ -47,7 +47,7 @@ func NewMemFile() *MemFile {
 }
 
 func (mf *MemFile) Open(spec string) error {
-	var err error = nil
+	var err error
 
 	mf.rdr, err = mmap.Open(spec)
 	if err != nil {
@@ -182,7 +182,7 @@ func (mf *MemFile) NextNewLine(origin int64) (int64, int64, int64) {
 }
 
 func (mf *MemFile) doRead(offset, size int64) (string, error) {
-	var buf []byte = make([]byte, size, size)
+	var buf []byte = make([]byte, size)
 
 	bread, err := mf.rdr.ReadAt(buf, offset)
 	if err != nil {

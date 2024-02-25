@@ -33,10 +33,6 @@ import (
 	"strings"
 )
 
-var (
-	thelogfile string = "/home/asmodai/Projects/Go/src/github.com/Asmodai/gotools/test.log"
-)
-
 type LogFind struct {
 	Code string
 
@@ -87,7 +83,11 @@ func (lf *LogFind) loadTerm() {
 		os.Exit(2)
 	}
 	lf.program = prog
-	lf.vm.LoadCode(lf.program.Optimised)
+
+	if err = lf.vm.LoadCode(lf.program.Optimised); err != nil {
+		lf.Log("Fatal: " + err.Error())
+		os.Exit(3)
+	}
 }
 
 func (lf *LogFind) findTerm() {
@@ -136,7 +136,11 @@ func (lf *LogFind) Init() {
 	lf.flags.BoolVar(&lf.Options.DumpSyntax, "s", false, "Print syntax and exit.")
 	lf.flags.BoolVar(&lf.Options.DumpProg, "p", false, "Print program and exit.")
 
-	lf.flags.Parse(os.Args[1:])
+	if err := lf.flags.Parse(os.Args[1:]); err != nil {
+		lf.Log("Fatal: " + err.Error())
+		os.Exit(3)
+	}
+
 	lf.validate()
 	lf.findTerm()
 	lf.vm.SetDebug(lf.Options.Debug)
@@ -146,8 +150,8 @@ func (lf *LogFind) Init() {
 
 func (lf *LogFind) Run() {
 	var status error = nil
-	var buf string = ""
-	var lines int = 0
+	var buf string 
+	var lines int
 	var matched int = 0
 
 	if err := lf.mfile.Open(lf.Options.File); err != nil {

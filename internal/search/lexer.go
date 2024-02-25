@@ -163,7 +163,7 @@ func (l *Lexer) lexString() (string, bool) {
 func (l *Lexer) termOrOperator(lit string) (Token, string) {
 	ulit := strings.ToUpper(lit)
 
-	for idx, _ := range operators {
+	for idx := range operators {
 		if ulit == operators[idx] {
 			for tok, str := range tokens {
 				if str == ulit {

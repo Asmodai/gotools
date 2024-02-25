@@ -50,7 +50,7 @@ var (
 )
 
 type LogView struct {
-	views Views
+//	views Views
 }
 
 /* logview.go ends here. */

@@ -42,7 +42,7 @@ type Base struct {
 }
 
 func (b *Base) levelColor(text string) string {
-	var esc string = ""
+	var esc string
 
 	switch b.Level {
 	case "INFO":
@@ -62,10 +62,6 @@ func (b *Base) levelColor(text string) string {
 	}
 
 	return fmt.Sprintf("%s%s\x1b[0m", esc, text)
-}
-
-func (b *Base) fieldColor(text string) string {
-	return fmt.Sprintf("\x1b[1;36m%s\x1b[0m", text)
 }
 
 func (b *Base) Short(width int) string {

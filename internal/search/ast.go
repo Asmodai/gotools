@@ -59,7 +59,7 @@ func MakeAST() *Syntax {
 func (s *Syntax) Sort() {
 	sort.Sort(BySyntax(s.children))
 
-	for idx, _ := range s.children {
+	for idx := range s.children {
 		s.children[idx].Sort()
 	}
 }
@@ -82,10 +82,10 @@ func (s *Syntax) dumpChildren(indent int) string {
 	result := ""
 	leader := "\n"
 	for i := 0; i < indent; i++ {
-		leader += fmt.Sprintf("  ")
+		leader += "  "
 	}
 
-	for idx, _ := range s.children {
+	for idx := range s.children {
 		result += fmt.Sprintf("%s%s", leader, s.children[idx].dump(indent))
 	}
 
@@ -101,7 +101,7 @@ func (s *Syntax) AddChild(node *Syntax) {
 }
 
 func (s *Syntax) RemoveChild(node *Syntax) bool {
-	for idx, _ := range s.children {
+	for idx := range s.children {
 		if s.children[idx].token == node.token && s.children[idx].literal == node.literal {
 			copy(s.children[idx:], s.children[idx+1:])
 			s.children[len(s.children)-1] = nil
@@ -125,7 +125,7 @@ func (s *Syntax) MapChildren(fn MapFn) {
 		return
 	}
 
-	for idx, _ := range s.children {
+	for idx := range s.children {
 		s.children[idx].Map(fn)
 	}
 }
@@ -141,26 +141,29 @@ func (s *Syntax) Build() []*Inst {
 
 	switch s.token {
 	case TOK_AND:
-		for idx, _ := range s.children {
-			for _, elt := range s.children[idx].Build() {
-				result = append(result, elt)
-			}
+		for idx := range s.children {
+			result = append(result, s.children[idx].Build()...)
+//			for _, elt := range s.children[idx].Build() {
+//				result = append(result, elt)
+//			}
 		}
 		result = append(result, NewInst(ISN_AND, nil))
 
 	case TOK_OR:
-		for idx, _ := range s.children {
-			for _, elt := range s.children[idx].Build() {
-				result = append(result, elt)
-			}
+		for idx := range s.children {
+			result = append(result, s.children[idx].Build()...)
+//			for _, elt := range s.children[idx].Build() {
+//				result = append(result, elt)
+//			}
 		}
 		result = append(result, NewInst(ISN_OR, nil))
 
 	case TOK_NOT:
-		for idx, _ := range s.children {
-			for _, elt := range s.children[idx].Build() {
-				result = append(result, elt)
-			}
+		for idx := range s.children {
+			result = append(result, s.children[idx].Build()...)
+//			for _, elt := range s.children[idx].Build() {
+//				result = append(result, elt)
+//			}
 		}
 		result = append(result, NewInst(ISN_NOT, nil))
 

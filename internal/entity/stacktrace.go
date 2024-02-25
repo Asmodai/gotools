@@ -52,7 +52,7 @@ func (st Stacktrace) DisplayTo(w io.Writer) {
 		return
 	}
 
-	for idx, _ := range st {
+	for idx := range st {
 		st[idx].DisplayTo(w)
 	}
 }

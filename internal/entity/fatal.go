@@ -54,7 +54,7 @@ func (f *Fatal) displayTrace(w io.Writer) {
 }
 
 func (f *Fatal) Compose(key string, value interface{}) bool {
-	var seen bool = false
+	var seen bool
 
 	seen = f.Base.Compose(key, value)
 

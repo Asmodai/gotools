@@ -91,7 +91,7 @@ func (p *Parser) buildSearchTerm(idx int) (string, error) {
 	if p.tokens[idx+2].token != TOK_STRING {
 		return "", p.makeError(
 			p.tokens[idx+2],
-			fmt.Sprintf("Invalid search term.  Pattern missing."),
+			"Invalid search term.  Pattern missing.",
 		)
 	}
 
@@ -104,15 +104,15 @@ func (p *Parser) buildSearchTerm(idx int) (string, error) {
 	return re, nil
 }
 
-func (p *Parser) scanForTok(start int, tok Token) bool {
-	for i := start; i < len(p.tokens); i++ {
-		if p.tokens[i].token == tok {
-			return true
-		}
-	}
-
-	return false
-}
+//func (p *Parser) scanForTok(start int, tok Token) bool {
+//	for i := start; i < len(p.tokens); i++ {
+//		if p.tokens[i].token == tok {
+//			return true
+//		}
+//	}
+//
+//	return false
+//}
 
 func (p *Parser) makeError(token element, msg string) error {
 	return fmt.Errorf(

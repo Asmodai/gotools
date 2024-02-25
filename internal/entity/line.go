@@ -26,7 +26,7 @@ type Line map[string]interface{}
 
 func (l Line) Parse() Entity {
 	var rec Entity = nil
-	var seen bool = false
+	var seen bool
 
 	if level, ok := l["level"]; ok {
 		switch level.(string) {

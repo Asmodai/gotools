@@ -31,9 +31,9 @@ type Log []Line
 func (l Log) Parse() []Entity {
 	var arr []Entity = []Entity{}
 
-	for idx, _ := range l {
+	for idx := range l {
 		if rec := l[idx].Parse(); rec != nil {
-			arr = append(arr, rec.(Entity))
+			arr = append(arr, rec)
 		}
 	}
 
@@ -44,7 +44,7 @@ func stringsToLog(lines []string) (Log, error) {
 	var result Log = Log{}
 	var line Line
 
-	for idx, _ := range lines {
+	for idx := range lines {
 		line = Line{}
 
 		if err := json.Unmarshal([]byte(lines[idx]), &line); err != nil {

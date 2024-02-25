@@ -41,7 +41,7 @@ func NewOptimiser(isns []*Inst) *Optimiser {
 func (o *Optimiser) PrettyBytecode() string {
 	out := ""
 
-	for idx, _ := range o.Optimised {
+	for idx := range o.Optimised {
 		out += fmt.Sprintf("%04d:\t%s\n", idx, o.Optimised[idx].Bytecode())
 	}
 
@@ -51,7 +51,7 @@ func (o *Optimiser) PrettyBytecode() string {
 func (o *Optimiser) Pretty() string {
 	out := ""
 
-	for idx, _ := range o.Optimised {
+	for idx := range o.Optimised {
 		out += fmt.Sprintf("%03d:\t%s\n", idx, o.Optimised[idx].String())
 	}
 
@@ -76,7 +76,7 @@ func (o *Optimiser) findLastStackOp(idx int) (int, bool) {
 func (o *Optimiser) assemble() {
 	lt := GetLabelTable()
 
-	for idx, _ := range o.Optimised {
+	for idx := range o.Optimised {
 		// Resolve labels.
 		lbl := o.Optimised[idx].Label
 		if lbl != nil {
@@ -91,7 +91,7 @@ func (o *Optimiser) assemble() {
 func (o *Optimiser) Optimise() {
 	endFragment := []*Inst{}
 
-	for idx, _ := range o.Unoptimised {
+	for idx := range o.Unoptimised {
 		switch o.Unoptimised[idx].Instruction {
 		case ISN_OR:
 			o.appendIsn(o.Unoptimised[idx])

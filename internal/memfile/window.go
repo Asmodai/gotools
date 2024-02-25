@@ -28,10 +28,10 @@ import (
 )
 
 // XXX
-func abs(n int64) int64 {
-	y := n >> 63
-	return (n ^ y) - y
-}
+//func abs(n int64) int64 {
+//	y := n >> 63
+//	return (n ^ y) - y
+//}
 
 type block struct {
 	Start int64
@@ -135,11 +135,11 @@ func (w *Window) Get() ([]string, error) {
 func (w *Window) makeExtents(origin int64) (int64, int64) {
 	var pos int64 = origin
 	var end int64 = pos
-	var start int64 = pos
+	var start int64
 
 	for i := 0; i < w.lines; i++ {
 		// Locate previous newline
-		pos, start, _ = w.file.PrevNewLine(pos)
+		pos, _, _ = w.file.PrevNewLine(pos)
 
 		// If we reach BOF, then we're done.
 		if pos == 0 {
