@@ -1,5 +1,5 @@
 /*
- * info.go --- Info log type.
+ * view.go --- Base view structure.
  *
  * Copyright (c) 2022 Paul Ward <asmodai@gmail.com>
  *
@@ -20,10 +20,39 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-package entity
+package main
 
-type Info struct {
-	Base
+import (
+	"github.com/awesome-gocui/gocui"
+)
+
+type Views []*View
+
+type View struct {
+	Title  string
+	Tag    string
+	Frame  bool
+	Wrap   bool
+	Bounds Rect
 }
 
-/* info.go ends here. */
+func (v *View) Layout(g *gocui.Gui) (*gocui.View, error) {
+	maxX, maxY := g.Size()
+
+	return g.SetView(
+		v.Tag,
+		v.Bounds.Left.Coordinate(maxX+1),
+		v.Bounds.Top.Coordinate(maxY+1),
+		v.Bounds.Right.Coordinate(maxX+1),
+		v.Bounds.Bottom.Coordinate(maxY+1),
+		0,
+	)
+}
+
+func (v *View) Preoperties(gv *gocui.View) {
+	gv.Title = v.Title
+	gv.Frame = v.Frame
+	gv.Wrap = v.Wrap
+}
+
+/* view.go ends here. */

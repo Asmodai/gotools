@@ -1,3 +1,25 @@
+/*
+ * main.go --- Log file viewer.
+ *
+ * Copyright (c) 2022 Paul Ward <asmodai@gmail.com>
+ *
+ * Author:     Paul Ward <asmodai@gmail.com>
+ * Maintainer: Paul Ward <asmodai@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation; either version 3
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, see <http://www.gnu.org/licenses/>.
+ */
+
 package main
 
 import (
@@ -8,8 +30,10 @@ import (
 	"github.com/awesome-gocui/gocui"
 
 	"errors"
+	"flag"
 	"fmt"
 	"log"
+	"os"
 )
 
 const (
@@ -43,14 +67,20 @@ func lineAbove(v *gocui.View) bool {
 type LogViewer struct {
 	ents []entity.Entity
 
-	log *memfile.MemFile
-	wnd *memfile.Window
-	gui *gocui.Gui
-	vm  *search.VM
+	log   *memfile.MemFile
+	wnd   *memfile.Window
+	gui   *gocui.Gui
+	vm    *search.VM
+	flags *flag.FlagSet
 
 	maxX  int
 	maxY  int
 	lines int
+
+	Options struct {
+		Debug bool
+		File  string
+	}
 
 	logPane struct {
 		width    int
@@ -61,14 +91,47 @@ type LogViewer struct {
 
 func NewLogViewer() *LogViewer {
 	return &LogViewer{
-		log: memfile.NewMemFile(),
+		log:   memfile.NewMemFile(),
+		flags: flag.NewFlagSet(os.Args[0], flag.ExitOnError),
+	}
+}
+
+func (lv *LogViewer) Log(arg string) {
+	fmt.Fprintln(flag.CommandLine.Output(), arg)
+}
+
+func (lv *LogViewer) Usage() {
+	name := os.Args[0]
+
+	fmt.Fprintf(
+		flag.CommandLine.Output(),
+		"Usage of %s:\n%s [-debug <bool>] [-file <string>] <term...>\n",
+		name,
+		name,
+	)
+	lv.flags.PrintDefaults()
+}
+
+func (lv *LogViewer) validate() {
+	if lv.Options.File == "" {
+		lv.Log("Fatal: No log file provided!")
+		lv.Usage()
+		os.Exit(2)
 	}
 }
 
 func (lv *LogViewer) Init() error {
 	var err error = nil
 
-	if err = lv.log.Open(thelogfile); err != nil {
+	lv.flags.BoolVar(&lv.Options.Debug, "debug", false, "Debug mode.")
+	lv.flags.StringVar(&lv.Options.File, "file", "", "Log file to parse.")
+	lv.flags.BoolVar(&lv.Options.Debug, "d", false, "Debug mode.")
+	lv.flags.StringVar(&lv.Options.File, "f", "", "Log file to parse.")
+
+	lv.flags.Parse(os.Args[1:])
+	lv.validate()
+
+	if err = lv.log.Open(lv.Options.File); err != nil {
 		return err
 	}
 
@@ -84,7 +147,10 @@ func (lv *LogViewer) Init() error {
 
 	lv.gui.Cursor = true
 	lv.gui.SetManagerFunc(lv.layout)
-	lv.keybinds()
+
+	if err := lv.keybinds(); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -258,11 +324,27 @@ func (lv *LogViewer) keybinds() error {
 		return err
 	}
 
+	if err := lv.gui.SetKeybinding("", 'j', gocui.ModNone, lv.cursorMove(1)); err != nil {
+		return fmt.Errorf("Error with keybinding:%s", err.Error())
+	}
+
+	if err := lv.gui.SetKeybinding("", 'k', gocui.ModNone, lv.cursorMove(-1)); err != nil {
+		return err
+	}
+
 	if err := lv.gui.SetKeybinding(LogViewName, gocui.KeyPgdn, gocui.ModNone, lv.windowMove(1)); err != nil {
 		return err
 	}
 
 	if err := lv.gui.SetKeybinding(LogViewName, gocui.KeyPgup, gocui.ModNone, lv.windowMove(-1)); err != nil {
+		return err
+	}
+
+	if err := lv.gui.SetKeybinding(LogViewName, gocui.KeyCtrlB, gocui.ModNone, lv.windowMove(1)); err != nil {
+		return err
+	}
+
+	if err := lv.gui.SetKeybinding(LogViewName, gocui.KeyCtrlF, gocui.ModNone, lv.windowMove(-1)); err != nil {
 		return err
 	}
 

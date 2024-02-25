@@ -7,16 +7,16 @@
  * Maintainer: Paul Ward <asmodai@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
+ * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation; either version 3
  * of the License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -160,7 +160,7 @@ func (vm *VM) execute() {
 					vm.Debug("\x1b[33mAND\x1b[0m: POP = %s\n", obj)
 					vals = append(vals, obj.(*Integer).Literal)
 				}
-				res := utils.IntAll(vals, func(i int) bool {
+				res := utils.All(vals, func(i int) bool {
 					return i == 1
 				})
 				vm.Debug("\x1b[33mAND\x1b[0m: Result = %t\n", res)
@@ -179,7 +179,7 @@ func (vm *VM) execute() {
 					vm.Debug("\x1b[33mOR\x1b[0m: POP = %s\n", obj)
 					vals = append(vals, obj.(*Integer).Literal)
 				}
-				res := utils.IntAny(vals, func(i int) bool {
+				res := utils.Any(vals, func(i int) bool {
 					return i == 1
 				})
 				vm.Debug("\x1b[33mOR\x1b[0m: Result = %t\n", res)
@@ -198,7 +198,7 @@ func (vm *VM) execute() {
 					vm.Debug("\x1b[33mNOT\x1b[0m: POP = %s\n", obj)
 					vals = append(vals, obj.(*Integer).Literal)
 				}
-				res := utils.IntAll(vals, func(i int) bool {
+				res := utils.All(vals, func(i int) bool {
 					return i == 0
 				})
 				vm.Debug("\x1b[33mNOT\x1b[0m: Result = %t\n", res)
@@ -250,6 +250,8 @@ func (vm *VM) execute() {
 					vm.pc = offset
 					goto jump
 				}
+				vm.Debug("\x1b[33mJZ\x1b[0m: Pushing %s back to stack\n", val.(*Integer))
+				vm.stack.Push(val)
 			}
 		case ISN_JNZ:
 			{
@@ -262,6 +264,8 @@ func (vm *VM) execute() {
 					vm.pc = offset
 					goto jump
 				}
+				vm.Debug("\x1b[33mJNZ\x1b[0m: Pushing %s back to stack\n", val.(*Integer))
+				vm.stack.Push(val)
 			}
 
 		case ISN_CLEAR:

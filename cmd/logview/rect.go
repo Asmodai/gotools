@@ -1,5 +1,5 @@
 /*
- * info.go --- Info log type.
+ * rect.go --- Rect structure.
  *
  * Copyright (c) 2022 Paul Ward <asmodai@gmail.com>
  *
@@ -20,10 +20,22 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-package entity
+package main
 
-type Info struct {
-	Base
+type Rect struct {
+	Top    Position
+	Bottom Position
+	Left   Position
+	Right  Position
 }
 
-/* info.go ends here. */
+func MakeRect(top, bottom, left, right Position) Rect {
+	return Rect{
+		Top:    top,
+		Bottom: bottom,
+		Left:   left,
+		Right:  right,
+	}
+}
+
+/* rect.go ends here. */

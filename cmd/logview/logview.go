@@ -1,5 +1,5 @@
 /*
- * info.go --- Info log type.
+ * logview.go --- CUI class.
  *
  * Copyright (c) 2022 Paul Ward <asmodai@gmail.com>
  *
@@ -20,10 +20,37 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-package entity
+package main
 
-type Info struct {
-	Base
+const (
+	VIEW_LOGS    = "viewlog"
+	VIEW_DETAILS = "viewdetails"
+	VIEW_STATUS  = "viewstatus"
+	VIEW_CMD     = "viewcmd"
+
+	SEARCH_PROMPT = "Search> "
+
+	TITLE_LOGS    = "Logs"
+	TITLE_DETAILS = "Detail"
+)
+
+var (
+	ViewLogs = &View{
+		Title: "Entries",
+		Tag:   VIEW_LOGS,
+		Frame: true,
+		Wrap:  false,
+		Bounds: MakeRect(
+			MakePosition(0.0, 0),
+			MakePosition(0.333, 0),
+			MakePosition(0.0, 0),
+			MakePosition(1.0, 0),
+		),
+	}
+)
+
+type LogView struct {
+	views Views
 }
 
-/* info.go ends here. */
+/* logview.go ends here. */

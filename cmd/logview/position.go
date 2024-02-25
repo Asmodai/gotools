@@ -1,5 +1,5 @@
 /*
- * info.go --- Info log type.
+ * position.go --- Position structure.
  *
  * Copyright (c) 2022 Paul Ward <asmodai@gmail.com>
  *
@@ -20,10 +20,22 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-package entity
+package main
 
-type Info struct {
-	Base
+type Position struct {
+	Percent  float32
+	Absolute int
 }
 
-/* info.go ends here. */
+func MakePosition(pct float32, abs int) Position {
+	return Position{
+		Percent:  pct,
+		Absolute: abs,
+	}
+}
+
+func (p Position) Coordinate(max int) int {
+	return int(p.Percent*float32(max)) + p.Absolute
+}
+
+/* position.go ends here. */
