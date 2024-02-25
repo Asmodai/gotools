@@ -150,7 +150,7 @@ func (vm *VM) execute() {
 
 		case ISN_POP:
 			val, _ := vm.stack.Pop()
-			vm.Debug("\x1b[33mPOP\x1b[0m: %s from stack.\n", val.(*Operand))
+			vm.Debug("\x1b[33mPOP\x1b[0m: %s from stack.\n", val.(*Operand).TypeString())
 
 		case ISN_AND:
 			{

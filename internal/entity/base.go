@@ -65,7 +65,7 @@ func (b *Base) levelColor(text string) string {
 }
 
 func (b *Base) fieldColor(text string) string {
-	return fmt.Sprintf("\x1b[1;36m%s\x1b[0m")
+	return fmt.Sprintf("\x1b[1;36m%s\x1b[0m", text)
 }
 
 func (b *Base) Short(width int) string {
